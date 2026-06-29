@@ -78,7 +78,7 @@
           md="4"
           >
 
-          <v-card border variant="outlined" class="rounded-xl pa-3">
+          <v-card border variant="outlined" class="rounded-xl pa-3 cursor-pointer" @click="showDetails(item)">
             <v-card-item>
               <div class="d-flex justify-space-between align-center mb-2">
 
@@ -98,24 +98,25 @@
             </v-card-item>
 
             <v-card-text class="text-medium-emphasis">
-              <div v-if="item.type !=='Movie'" class="d-flex align-center my-2">
-                  <div class="d-flex align-center justify-space-between my-2">
+              <div v-if="item.type !=='Movie'" class="d-flex align-center justify-space-between my-2">
+                  <!--<div class="d-flex align-center justify-space-between my-2">-->
                     <span class="text-body-2 font-weight-bold text-medium-emphasis mr-2">Progress:</span>
+
                       <div class="d-flex align-center" style="gap: 16px;">
                         <div class="d-flex align-center">
-                          <span class="mr-1">Seasson:</span>
+                          <span class="mr-1">Season:</span>
                           <b class="text-body-2 mr-2">{{ item.season }}</b>
-                          <v-btn icon="mdi-plus" size="x-small" variant="tonal" color="secondary" @click="plusSeason(item)" />
+                          <v-btn icon="mdi-plus" size="x-small" variant="tonal" color="secondary" @click.stop="plusSeason(item)" />
                         </div>
 
                         <div class="d-flex align-center">
                           <span class="mr-1">Ep.</span>
                           <b class="text-body-2 mr-2">{{ item.episode }}</b>
-                          <v-btn icon="mdi-plus" size="x-small" variant="tonal" color="primary" @click="item.episode++" />
+                          <v-btn icon="mdi-plus" size="x-small" variant="tonal" color="primary" @click.stop="item.episode++" />
                         </div>
                     </div>
                   </div>
-                </div>
+                <!--</div>-->
               <div class="text-caption mt-2">
                   <v-icon icon="mdi-account-heart" size="small" class="mr-1"></v-icon>
                   Recommended By: <span class="text-primary">{{ item.recommendedBy || 'Nobody' }}</span>
@@ -124,8 +125,8 @@
 
             <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn icon="mdi-pencil-outline" size="small" color="primary" variant="text" @click="openToEdit(item)"></v-btn>
-                <v-btn icon="mdi-delete-outline" size="small" color="error" variant="text" @click="deleteItem(item)"></v-btn>
+                <v-btn icon="mdi-pencil-outline" size="small" color="primary" variant="text" @click.stop="openToEdit(item)"></v-btn>
+                <v-btn icon="mdi-delete-outline" size="small" color="error" variant="text" @click.stop="deleteItem(item)"></v-btn>
             </v-card-actions>
 
           </v-card>
@@ -146,21 +147,41 @@
     >
   </v-btn>
 
+  <!--Llamo los dialogos o ventanas emergentes, que son componentes hijos-->
   <dialog-form
     v-model="dialogForm"
     :item-to-edit="itemSelectedToEdit"
     @save-item="addNewItem"
     @update-item="updateExistsItem"
   />
-    
+
+  <DetailForm
+    v-model="dialogDetail"
+    :item="selectedItem"
+    :get-color-platform="getColorPlatform"
+  />
   </v-app>
+
 </template>
 
 <script lang="ts" setup>
 
   import { ref, computed, watch } from 'vue'
+
   //importamos nuestro componente hijo personalizado
   import DialogForm from './components/DialogForm.vue'
+  import DetailForm from './components/DetailForm.vue'
+
+  // REQUISITO OOP: Definimos la interfaz estricta en TypeScript para nuestro modelo de datos
+  interface WatchItem {
+    title: string
+    type: 'Movie' | 'Serie'
+    platform: string
+    season: number
+    episode: number
+    recommendedBy?: string
+    //status?: 'Watching' | 'Completed' Opcional para mantener retrocompatibilidad con tus datos actuales
+  }
 
 
   //Estado de la UI al iniciar
@@ -168,12 +189,19 @@
   const activeFilter = ref('All')
   const dialogForm = ref(false)
   const textSearch = ref('') // Empieza vacío
-  const itemSelectedToEdit = ref<any>(null)
+  const dialogDetail = ref(false)
 
+  // OOP TIPADO: Tipificamos las variables que manipulan elementos con nuestra Interfaz
+  const itemSelectedToEdit = ref<WatchItem | null>(null)
+  const selectedItem = ref<WatchItem | null>(null) // Empieza con null y luego guarda datos tipo WatchItem
+  //const itemSelectedToEdit = ref<any>(null)
+  //const selectedItem = ref<any>(null) //empieza con null y luego guarda datos
 
 // LOCAL STORAGE: Intentar cargar datos existentes, si no, usar lista vacía
   const saveData = localStorage.getItem('bingewatch_items')
-  const items = ref(saveData ? JSON.parse(saveData) : [
+
+  //OOP TIPADO: Indicamos que 'items' es una lista estricta de objetos tipo WatchItem
+  const items = ref<WatchItem[]>(saveData ? JSON.parse(saveData) : [
     // Datos iniciales por defecto si el LocalStorage está vacío por primera vez
     { title: 'Stranger Things', type: 'Serie', platform: 'Netflix', season: 4, episode: 2, recommendedBy: 'Andrés' },
     { title: 'Inception', type: 'Movie', platform: 'Prime', season: 0, episode: 0, recommendedBy: 'Sofía'}
@@ -189,16 +217,8 @@
     console.log('Buscando')
   }
 
-  // Filtrado reactivo
- /* const itemsFilter = computed( () => {
-    if (activeFilter.value === 'All') {
-      return items.value
-    }
-    return items.value.filter(item => item.type === activeFilter.value)
-  })*/
-
   const itemsFilter = computed(() => {
-    return items.value.filter((item :any)  => {
+    return items.value.filter((item :WatchItem)  => {
       // 1. Validar el filtro de la pestaña (All, Movie, Serie, etc.)
       const coincideTipo = activeFilter.value === 'All' || item.type === activeFilter.value
 
@@ -224,19 +244,19 @@
   }
 
   // Lógica para añadir el nuevo elemento enviado desde el componente hijo
-  const addNewItem = (itemRecived :any) => {
+  const addNewItem = (itemRecived :WatchItem) => {
     items.value.push(itemRecived)
   }
 
   // Lógica para eliminar
-  const deleteItem = (itemDelete :any) => {
+  const deleteItem = (itemDelete :WatchItem) => {
     items.value = items.value.filter((i :any) => i !== itemDelete)
   }
 
 //Logoca para EDITAR
   // Función que se activa al dar clic en el botón de lápiz de la tarjeta
-  const openToEdit = (item: any) => {
-    itemSelectedToEdit.value = item // Guardamos la referencia original
+  const openToEdit = (item: WatchItem) => {
+    itemSelectedToEdit.value = { ...item }// Guardamos la referencia original
     dialogForm.value = true
   }
 
@@ -249,18 +269,25 @@
   }
 
   // Función para procesar la actualización
-  const updateExistsItem = (itemEditado: any) => {
-    // Buscamos el elemento original en nuestra lista por su título original (o posición)
-    const index = items.value.findIndex((i :any) => i.title === itemSelectedToEdit.value.title)
+  const updateExistsItem = (itemEditado: WatchItem) => {
+    if (!itemSelectedToEdit.value) return
+
+    // Buscamos el elemento original en nuestra lista por su título original
+    const index = items.value.findIndex((i: WatchItem) => i.title === itemSelectedToEdit.value!.title)
     if (index !== -1) {
       items.value[index] = itemEditado // Reemplazamos los datos viejos por los nuevos
     }
   }
 
   // Lógica para subir de temporada de forma inteligente
-  const plusSeason = (item: any) => {
+  const plusSeason = (item: WatchItem) => {
     item.season++
     item.episode = 1 // Al pasar de temporada, por lógica empezamos en el episodio 1
   }
  
+  //Funcion para activar la ventana emergente con los datos de la tarjeta
+ const showDetails = (item: WatchItem) => {
+    selectedItem.value = item     // Guardamos el objeto exacto en el que se hizo clic
+    dialogDetail.value = true     // Abrimos el segundo diálogo emergente
+  }
 </script>
