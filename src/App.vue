@@ -142,7 +142,8 @@
       size="large"
       location="bottom right"
       position="fixed"
-      class="ma-6"
+      class="mr-6"
+      style="z-index: 99; bottom: 90px";
       @click="openToCreate"
     >
   </v-btn>
