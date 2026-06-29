@@ -135,18 +135,6 @@
       </v-container>
     </v-main>
 
-    <!--Boton de agregar una nueva pelicula o serie -->
-    <v-btn
-      icon="mdi-plus"
-      color="blue-grey"
-      size="large"
-      location="bottom right"
-      position="fixed"
-      class="mr-6"
-      style="z-index: 99; bottom: 90px";
-      @click="openToCreate"
-    >
-  </v-btn>
 
   <!--Llamo los dialogos o ventanas emergentes, que son componentes hijos-->
   <dialog-form
@@ -197,6 +185,20 @@
 </v-footer>
   <ImpressumDialog 
     v-model="dialogImpressum" />
+
+    <!--Boton de agregar una nueva pelicula o serie -->
+    <v-btn
+      icon="mdi-plus"
+      color="blue-grey"
+      size="large"
+      location="bottom right"
+      position="fixed"
+      class="mr-6"
+      style="z-index: 99; bottom: 100px";
+      @click="openToCreate"
+    >
+  </v-btn>
+
   </v-app>
 
 </template>
