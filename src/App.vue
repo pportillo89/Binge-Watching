@@ -160,6 +160,42 @@
     :item="selectedItem"
     :get-color-platform="getColorPlatform"
   />
+
+  <v-footer class="text-center d-flex flex-column bg-grey-lighten-4 mt-auto py-3">
+  <div class="text-body-2 text-medium-emphasis mb-1">
+    Designed & Developed with 💻 by <strong>Paola Portillo Martell</strong>
+  </div>
+
+  <div class="d-flex justify-center mb-2" style="gap: 8px;">
+    <v-btn 
+      icon="mdi-github" 
+      variant="text" 
+      size="small" 
+      href="https://github.com/pportillo89" 
+      target="_blank"
+    ></v-btn>
+    
+    <v-btn 
+      icon="mdi-linkedin" 
+      variant="text" 
+      size="small" 
+      color="blue-darken-3"
+      href="https://linkedin.com/in/paola-portillo-martell-0130804a" 
+      target="_blank"
+    ></v-btn>
+  </div>
+  
+  <v-btn 
+    variant="text" 
+    size="x-small" 
+    color="grey-darken-1" 
+    @click="dialogImpressum = true"
+  >
+    Impressum / Rechtliche Hinweise
+  </v-btn>
+</v-footer>
+  <ImpressumDialog 
+    v-model="dialogImpressum" />
   </v-app>
 
 </template>
@@ -171,6 +207,7 @@
   //importamos nuestro componente hijo personalizado
   import DialogForm from './components/DialogForm.vue'
   import DetailForm from './components/DetailForm.vue'
+  import ImpressumDialog from './components/ImpressumDialog.vue'
 
   // REQUISITO OOP: Definimos la interfaz estricta en TypeScript para nuestro modelo de datos
   interface WatchItem {
@@ -190,6 +227,7 @@
   const dialogForm = ref(false)
   const textSearch = ref('') // Empieza vacío
   const dialogDetail = ref(false)
+  const dialogImpressum = ref<boolean>(false)
 
   // OOP TIPADO: Tipificamos las variables que manipulan elementos con nuestra Interfaz
   const itemSelectedToEdit = ref<WatchItem | null>(null)
